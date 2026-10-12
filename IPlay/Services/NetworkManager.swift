@@ -2,8 +2,6 @@
 //  NetworkManager.swift
 //  IPlay
 //
-//  网络管理与 Bonjour 发现（兼容 iOS 15）
-//
 
 import Foundation
 import Network
@@ -11,60 +9,48 @@ import Network
 class NetworkManager: ObservableObject {
     static let shared = NetworkManager()
     
-    @Published var currentSSID: String = ""
-    @Published var localIPAddress: String = ""
-    @Published var isHotspotActive: Bool = false
+    @Published var localIP: String = ""
+    @Published var discoveredDevices: [String] = []
     
-    private var nwMonitor: NWPathMonitor!
+    private var browser: NWBrowser?
     private var listener: NWListener?
     
-    private init() {
-        setupNetworkMonitor()
-    }
-    
-    func setupNetworkMonitor() {
-        nwMonitor = NWPathMonitor()
-        nwMonitor.pathUpdateHandler = { path in
+    func startBrowsing() {
+        let descriptor = NWBrowser.Descriptor.bonjour(type: "_carplay._tcp", domain: "")
+        let params = NWParameters.tcp
+        
+        browser = NWBrowser(for: descriptor, using: params)
+        
+        browser?.browserQueue = DispatchQueue.global(qos: .userInitiated)
+        browser?.browseResultsChangedHandler = { results, changes in
             DispatchQueue.main.async {
-                self.updateNetworkInfo(path: path)
+                self.discoveredDevices = results.map { result in
+                    if case .service(let name, _, _, _) = result.endpoint {
+                        return name
+                    }
+                    return "未知设备"
+                }
             }
         }
-        nwMonitor.start(queue: DispatchQueue.global(qos: .background))
+        
+        browser?.start()
     }
     
-    func updateNetworkInfo(path: NWPath) {
-        if path.status == .satisfied {
-            print("网络已连接")
-            localIPAddress = getIPAddress()
-        } else {
-            print("网络未连接")
-            localIPAddress = ""
-        }
+    func stopBrowsing() {
+        browser?.cancel()
+        browser = nil
     }
     
-    func getIPAddress() -> String {
-        return "192.168.1.x"
-    }
-    
-    // MARK: - 启动接收服务
-    func startListening() {
+    func startListening(port: UInt16 = 5000) {
         do {
-            listener = try NWListener(using: .tcp, on: 5000)
-            
-            listener?.newConnectionHandler = { connection in
-                print("收到新连接: \(connection.endpoint)")
-                connection.start(queue: .main)
+            listener = try NWListener(using: .tcp, on: port)
+            listener?.newConnectionHandler = { conn in
+                print("收到连接: \(conn.endpoint)")
+                conn.start(queue: .main)
             }
-            
             listener?.start(queue: .main)
-            print("开始监听端口 5000")
         } catch {
-            print("启动监听失败: \(error)")
+            print("监听失败: \(error)")
         }
-    }
-    
-    func stopListening() {
-        listener?.cancel()
-        listener = nil
     }
 }
