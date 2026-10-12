@@ -21,9 +21,9 @@ struct ConnectionView: View {
                     }
                 }
                 
-                Button {
+                Button(action: {
                     refreshDevices()
-                } label: {
+                }) {
                     Label("刷新", systemImage: "arrow.clockwise")
                 }
             }
@@ -37,7 +37,7 @@ struct ConnectionView: View {
                 .pickerStyle(SegmentedPickerStyle())
             }
             
-            Section(header: Text("网络配置")) {
+            Section(header: Text("网络配置"), footer: Text("本机热点模式：iPad 开启个人热点，iPhone 连接后进行 CarPlay 配对")) {
                 TextField("SSID", text: $appState.ssid)
                 SecureField("密码", text: $appState.password)
                 Picker("信道", selection: $appState.channel) {
@@ -46,8 +46,6 @@ struct ConnectionView: View {
                     Text("6").tag("6")
                     Text("11").tag("11")
                 }
-            } footer: {
-                Text("本机热点模式：iPad 开启个人热点，iPhone 连接后进行 CarPlay 配对")
             }
             
             Section(header: Text("连接状态")) {
@@ -66,9 +64,9 @@ struct ConnectionView: View {
         }
         .navigationTitle("连接设置")
         .safeAreaInset(edge: .bottom) {
-            Button {
+            Button(action: {
                 toggleReceiving()
-            } label: {
+            }) {
                 HStack {
                     Image(systemName: appState.isReceiving ? "stop.circle.fill" : "play.circle.fill")
                     Text(appState.isReceiving ? "停止接收" : "启动接收")
