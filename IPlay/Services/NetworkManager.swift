@@ -16,7 +16,6 @@ class NetworkManager: ObservableObject {
     @Published var isHotspotActive: Bool = false
     
     private var nwMonitor: NWPathMonitor!
-    private var browser: NWBrowser?
     private var listener: NWListener?
     
     private init() {
@@ -45,27 +44,6 @@ class NetworkManager: ObservableObject {
     
     func getIPAddress() -> String {
         return "192.168.1.x"
-    }
-    
-    // MARK: - Bonjour 服务发现
-    func startBrowsing() {
-        // TODO: 浏览 CarPlay 相关的 Bonjour 服务
-        let descriptor = NWBrowser.Descriptor.bonjour(type: "_carplay._tcp", domain: "")
-        
-        browser = NWBrowser(for: .bonjour(descriptor: descriptor), using: .tcp)
-        
-        browser?.browseResultsChangedHandler = { results, changes in
-            for result in results {
-                print("发现服务: \(result.endpoint)")
-            }
-        }
-        
-        browser?.start(queue: .main)
-    }
-    
-    func stopBrowsing() {
-        browser?.cancel()
-        browser = nil
     }
     
     // MARK: - 启动接收服务
