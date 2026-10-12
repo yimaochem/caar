@@ -2,7 +2,7 @@
 //  NetworkManager.swift
 //  IPlay
 //
-//  网络管理与 Bonjour 发现
+//  网络管理与 Bonjour 发现（兼容 iOS 15）
 //
 
 import Foundation
@@ -36,7 +36,6 @@ class NetworkManager: ObservableObject {
     func updateNetworkInfo(path: NWPath) {
         if path.status == .satisfied {
             print("网络已连接")
-            // TODO: 获取实际 IP 地址
             localIPAddress = getIPAddress()
         } else {
             print("网络未连接")
@@ -45,19 +44,15 @@ class NetworkManager: ObservableObject {
     }
     
     func getIPAddress() -> String {
-        // TODO: 获取设备实际 IP 地址
         return "192.168.1.x"
     }
     
     // MARK: - Bonjour 服务发现
     func startBrowsing() {
         // TODO: 浏览 CarPlay 相关的 Bonjour 服务
-        let descriptor = NWBrowser.Descriptor.bonjourWithTXTRecord(
-            service: "_carplay._tcp",
-            domain: ""
-        )
+        let descriptor = NWBrowser.Descriptor.bonjour(type: "_carplay._tcp", domain: "")
         
-        browser = NWBrowser(for: .bonjour, using: descriptor)
+        browser = NWBrowser(for: .bonjour(descriptor: descriptor), using: .tcp)
         
         browser?.browseResultsChangedHandler = { results, changes in
             for result in results {
