@@ -2,8 +2,6 @@
 //  RootView.swift
 //  IPlay
 //
-//  主界面：左侧导航 + 右侧内容区（兼容 iOS 15）
-//
 
 import SwiftUI
 
@@ -11,47 +9,31 @@ struct RootView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        HStack(spacing: 0) {
-            // 左侧导航栏
-            SidebarView()
-                .frame(width: 200)
+        NavigationView {
+            List {
+                NavigationLink(destination: ConnectionView()) {
+                    Label("连接设置", systemImage: "antenna.radiowaves.left.and.right")
+                }
+                NavigationLink(destination: DisplayView()) {
+                    Label("显示设置", systemImage: "display")
+                }
+                NavigationLink(destination: AudioView()) {
+                    Label("音频设置", systemImage: "speaker.wave.2")
+                }
+                NavigationLink(destination: AboutView()) {
+                    Label("关于", systemImage: "info.circle")
+                }
+            }
+            .navigationTitle("IPlay")
+            .listStyle(SidebarListStyle())
             
-            // 右侧内容区
-            ZStack {
-                switch appState.selectedTab {
-                case .connection:
-                    ConnectionView()
-                case .display:
-                    DisplayView()
-                case .audio:
-                    AudioView()
-                case .about:
-                    AboutView()
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .sheet(isPresented: $appState.isShowingCarPlay) {
-            CarPlayView()
-        }
-    }
-}
-
-// MARK: - 左侧侧边栏
-struct SidebarView: View {
-    @EnvironmentObject var appState: AppState
-    
-    var body: some View {
-        List {
-            ForEach(AppState.Tab.allCases, id: \.self) { tab in
-                Button {
-                    appState.selectedTab = tab
-                } label: {
-                    Label(tab.rawValue, systemImage: tab.icon)
-                        .foregroundColor(appState.selectedTab == tab ? .blue : .primary)
-                }
+            if appState.isShowingCarPlay {
+                CarPlayView()
+            } else {
+                Text("选择左侧“连接设置”开始")
+                    .foregroundColor(.secondary)
             }
         }
-        .navigationTitle("IPlay")
+        .navigationViewStyle(DoubleColumnNavigationViewStyle())
     }
 }
