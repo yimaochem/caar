@@ -15,7 +15,6 @@ jobs:
 
     - name: Fix file structure (create symlinks)
       run: |
-        # Xcode找的是根目录的Views和Services，但文件在IPlay下面，建符号链接
         ln -sf IPlay/Views Views
         ln -sf IPlay/Services Services
         ls -la
@@ -33,12 +32,25 @@ jobs:
           -archivePath ./build/IPlay.xcarchive \
           archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-    - name: Add placeholder icon
+    - name: Fix Info.plist and add icon
       run: |
         APP_PATH="./build/IPlay.xcarchive/Products/Applications/IPlay.app"
-        sips -s format png --resampleHeightWidth 1024 1024 /System/Library/CoreServices/DefaultDesktop.jpg --out "$APP_PATH/AppIcon.png" || echo "创建占位图标完成"
-        plutil -insert CFBundleIconFiles -json '["AppIcon.png"]' "$APP_PATH/Info.plist" || echo "图标配置已存在"
-        plutil -insert CFBundleIconName -string "AppIcon" "$APP_PATH/Info.plist" || echo "图标名配置已存在"
+        
+        # 用Python生成一个蓝色纯色图标
+        python3 -c "
+from PIL import Image
+img = Image.new('RGB', (1024, 1024), color=(10, 132, 255))
+img.save('$APP_PATH/AppIcon.png')
+print('图标生成成功')
+"
+        
+        # 补上必须的可执行文件名字段
+        plutil -insert CFBundleExecutable -string "IPlay" "$APP_PATH/Info.plist" || echo "CFBundleExecutable已存在"
+        
+        # 加上iOS 13+必须的Scene配置
+        plutil -insert UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes": false}' "$APP_PATH/Info.plist" || echo "Scene配置已存在"
+        
+        ls -la "$APP_PATH/"
 
     - name: Export IPA
       run: |
@@ -47,6 +59,7 @@ jobs:
         cd ./build
         ditto -c -k --sequesterRsrc --keepParent Payload IPlay.ipa
         rm -rf Payload
+        ls -lh IPlay.ipa
 
     - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
