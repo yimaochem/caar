@@ -13,11 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fix file structure
+    - name: Fix file structure (create symlinks)
       run: |
-        mkdir -p IPlay/Views IPlay/Services
-        [ -d "Views" ] && mv Views/* IPlay/Views/ && rmdir Views
-        [ -d "Services" ] && mv Services/* IPlay/Services/ && rmdir Services
+        # Xcode找的是根目录的Views和Services，但文件在IPlay下面，建符号链接
+        ln -sf IPlay/Views Views
+        ln -sf IPlay/Services Services
         ls -la
 
     - name: Show Xcode version
