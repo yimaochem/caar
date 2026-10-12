@@ -2,56 +2,86 @@
 //  CarPlayView.swift
 //  IPlay
 //
-//  CarPlay 投屏画面
-//
 
 import SwiftUI
-import AVKit
+import AVFoundation
 
 struct CarPlayView: View {
     @EnvironmentObject var appState: AppState
-    @State private var showingSettings = false
+    @State private var showControls: Bool = true
     
     var body: some View {
         ZStack {
-            // 黑色背景
-            Color.black
-                .ignoresSafeArea()
+            Color.black.ignoresSafeArea()
             
-            // CarPlay 画面区域
-            // TODO: 替换为实际的视频渲染层
+            // CarPlay视频画面占位
             Rectangle()
-                .fill(Color(white: 0.1))
-                .aspectRatio(16/9, contentMode: .fit)
-                .overlay {
-                    VStack(spacing: 20) {
-                        Text("CarPlay 画面")
+                .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay(
+                    VStack {
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 80))
                             .foregroundColor(.white)
+                        Text("CarPlay 投屏中")
                             .font(.title)
-                        Text("等待视频流...")
-                            .foregroundColor(.gray)
-                            .font(.subheadline)
+                            .foregroundColor(.white)
                     }
-                }
+                )
             
-            // 右上角退出按钮
+            // 顶部控制栏
             VStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        appState.isShowingCarPlay = false
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title)
-                            .foregroundColor(.white.opacity(0.8))
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
+                if showControls {
+                    HStack {
+                        Button(action: {}) {
+                            Image(systemName: "house.fill")
+                                .font(.title2)
+                                .padding()
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {}) {
+                            Image(systemName: "mic.fill")
+                                .font(.title2)
+                                .padding()
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {}) {
+                            Image(systemName: "chevron.left")
+                                .font(.title2)
+                                .padding()
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+                    }
+                    .padding()
+                    .transition(.move(edge: .top))
+                }
+                
+                Spacer()
+                
+                if showControls && appState.showFPS {
+                    HStack {
+                        Text("FPS: 30")
+                            .font(.caption)
+                            .padding(4)
+                            .background(Color.black.opacity(0.5))
+                            .foregroundColor(.white)
+                            .cornerRadius(4)
+                        Spacer()
                     }
                     .padding()
                 }
-                Spacer()
             }
         }
-        .statusBarHidden()
+        .onTapGesture {
+            withAnimation { showControls.toggle() }
+        }
     }
 }
