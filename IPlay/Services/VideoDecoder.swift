@@ -2,86 +2,101 @@
 //  VideoDecoder.swift
 //  IPlay
 //
-//  H.264 视频解码（兼容 iOS 15）
-//
 
 import Foundation
-import AVFoundation
 import VideoToolbox
+import AVFoundation
 
 class VideoDecoder: ObservableObject {
     static let shared = VideoDecoder()
     
-    @Published var isDecoding: Bool = false
     @Published var currentFrame: CVPixelBuffer?
     
     private var decompressionSession: VTDecompressionSession?
-    private var videoFormatDescription: CMVideoFormatDescription?
-    
-    private init() {}
+    private var formatDescription: CMVideoFormatDescription?
     
     func setupDecoder(width: Int, height: Int) {
-        print("初始化视频解码器: \(width)x\(height)")
+        var codecSpec = 0
+        codecSpec = kCMVideoCodecType_H264
         
-        var formatDescription: CMVideoFormatDescription?
-        var status = CMVideoFormatDescriptionCreate(
+        var desc: CMVideoFormatDescription?
+        CMVideoFormatDescriptionCreate(
             allocator: kCFAllocatorDefault,
-            codecType: kCMVideoCodecType_H264,
+            codecType: codecSpec,
             width: Int32(width),
             height: Int32(height),
             extensions: nil,
-            formatDescriptionOut: &formatDescription
+            formatDescriptionOut: &desc
         )
+        formatDescription = desc
         
-        guard status == noErr, let formatDesc = formatDescription else {
-            print("创建格式描述失败: \(status)")
-            return
-        }
-        
-        videoFormatDescription = formatDesc
-        
-        let callback: VTDecompressionOutputCallback = { decompressionOutputRefCon, sourceFrameRefCon, status, infoFlags, imageBuffer, presentationTimeStamp, duration in
-            if status == noErr, let imageBuffer = imageBuffer {
-                DispatchQueue.main.async {
-                    VideoDecoder.shared.currentFrame = imageBuffer
+        var callback = VTDecompressionOutputCallbackRecord(
+            decompressionOutputCallback: { (decompressionOutputRefCon, _, _, status, _, pixelBuffer, _, _) in
+                if status == noErr, let pb = pixelBuffer {
+                    DispatchQueue.main.async {
+                        VideoDecoder.shared.currentFrame = pb
+                    }
                 }
-            }
-        }
-        
-        var callbackWithOutput = VTDecompressionOutputCallbackRecord(
-            decompressionOutputCallback: callback,
+            },
             decompressionOutputRefCon: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         )
         
-        var decoderSession: VTDecompressionSession?
-        status = VTDecompressionSessionCreate(
+        var session: VTDecompressionSession?
+        VTDecompressionSessionCreate(
             allocator: kCFAllocatorDefault,
-            formatDescription: formatDesc,
+            formatDescription: desc!,
             decoderSpecification: nil,
             imageBufferAttributes: [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+                kCVPixelBufferPixelFormatTypeKey: kCVPixelFormatType_32BGRA
             ] as CFDictionary,
-            outputCallback: &callbackWithOutput,
-            decompressionSessionOut: &decoderSession
+            outputCallback: &callback,
+            decompressionSessionOut: &session
         )
-        
-        guard status == noErr, let session = decoderSession else {
-            print("创建解码会话失败: \(status)")
-            return
-        }
-        
         decompressionSession = session
-        isDecoding = true
-        print("视频解码器就绪")
     }
     
-    func decodeFrame(_ data: Data) {
-        guard decompressionSession != nil else { return }
-        // TODO: 解码 H.264 帧数据
-    }
-    
-    func stopDecoding() {
-        decompressionSession = nil
-        isDecoding = false
+    func decodeFrame(data: Data) {
+        guard let session = decompressionSession else { return }
+        
+        data.withUnsafeBytes { buffer in
+            var blockBuffer: CMBlockBuffer?
+            CMBlockBufferCreateWithMemoryBlock(
+                allocator: kCFAllocatorDefault,
+                memoryBlock: UnsafeMutableRawPointer(mutating: buffer.baseAddress),
+                blockLength: data.count,
+                blockAllocator: nil,
+                customBlockSource: nil,
+                offsetToData: 0,
+                dataLength: data.count,
+                flags: 0,
+                blockBufferOut: &blockBuffer
+            )
+            
+            var sampleBuffer: CMSampleBuffer?
+            CMSampleBufferCreate(
+                allocator: kCFAllocatorDefault,
+                dataBuffer: blockBuffer!,
+                dataReady: true,
+                makeDataReadyCallback: nil,
+                refCon: nil,
+                formatDescription: formatDescription!,
+                sampleCount: 1,
+                sampleTimingEntryCount: 0,
+                sampleTimingArray: nil,
+                sampleSizeEntryCount: 0,
+                sampleSizeArray: nil,
+                sampleBufferOut: &sampleBuffer
+            )
+            
+            if let sb = sampleBuffer {
+                VTDecompressionSessionDecodeFrame(
+                    session,
+                    sampleBuffer: sb,
+                    flags: [],
+                    frameRefCon: nil,
+                    infoFlags: nil
+                )
+            }
+        }
     }
 }
