@@ -2,38 +2,35 @@
 //  AboutView.swift
 //  IPlay
 //
-//  关于页（兼容 iOS 15）
-//
 
 import SwiftUI
 
 struct AboutView: View {
     var body: some View {
         Form {
-            Section(header: Text("关于 IPlay")) {
+            Section {
                 HStack {
                     Text("版本")
                     Spacer()
-                    Text("0.1.0")
+                    Text("v0.2.0")
                         .foregroundColor(.secondary)
                 }
-                
                 HStack {
-                    Text("项目")
+                    Text("部署目标")
                     Spacer()
-                    Text("IPlay - iPad CarPlay 接收端")
+                    Text("iOS 15.1+")
                         .foregroundColor(.secondary)
                 }
             }
             
-            Section(header: Text("说明")) {
-                Text("参考 WinPlay 项目开发，支持无线 CarPlay 接收，让 iPad 成为车载显示终端。")
-                    .foregroundColor(.secondary)
+            Section(header: Text("关于")) {
+                Text("IPlay是原生iPad CarPlay接收端，支持Wi-Fi/蓝牙连接，硬解码H.264视频流。")
+                    .font(.body)
             }
             
-            Section(header: Text("维护")) {
-                Button("检查更新") { }
-                Button("导出诊断日志") { }
+            Section(header: Text("开源协议")) {
+                Text("MIT License")
+                    .foregroundColor(.secondary)
             }
         }
         .navigationTitle("关于")
