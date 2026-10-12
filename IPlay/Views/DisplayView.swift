@@ -2,7 +2,7 @@
 //  DisplayView.swift
 //  IPlay
 //
-//  显示设置页
+//  显示设置页（兼容 iOS 15）
 //
 
 import SwiftUI
@@ -15,7 +15,7 @@ struct DisplayView: View {
     
     var body: some View {
         Form {
-            Section {
+            Section(header: Text("视频输出")) {
                 Picker("视频分辨率", selection: $appState.resolution) {
                     ForEach(resolutions, id: \.self) { res in
                         Text(res).tag(res)
@@ -27,19 +27,12 @@ struct DisplayView: View {
                         Text("\(fps) fps").tag(fps)
                     }
                 }
-            } header: {
-                Text("视频输出")
             }
             
-            Section {
+            Section(header: Text("显示模式"), footer: Text("开启后画面按请求的物理像素尺寸显示，不受系统缩放影响")) {
                 Toggle("严格物理像素对齐", isOn: $appState.strictPixelAlignment)
-            } header: {
-                Text("显示模式")
-            } footer: {
-                Text("开启后画面按请求的物理像素尺寸显示，不受系统缩放影响")
             }
         }
-        .formStyle(.grouped)
         .navigationTitle("显示设置")
     }
 }
