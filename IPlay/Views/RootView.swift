@@ -2,7 +2,7 @@
 //  RootView.swift
 //  IPlay
 //
-//  主界面：左侧导航 + 右侧内容区
+//  主界面：左侧导航 + 右侧内容区（兼容 iOS 15）
 //
 
 import SwiftUI
@@ -11,11 +11,11 @@ struct RootView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             // 左侧导航栏
             SidebarView()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 250)
-        } detail: {
+                .frame(width: 200)
+            
             // 右侧内容区
             ZStack {
                 switch appState.selectedTab {
@@ -29,6 +29,7 @@ struct RootView: View {
                     AboutView()
                 }
             }
+            .frame(maxWidth: .infinity)
         }
         .sheet(isPresented: $appState.isShowingCarPlay) {
             CarPlayView()
@@ -41,13 +42,16 @@ struct SidebarView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        List(selection: $appState.selectedTab) {
+        List {
             ForEach(AppState.Tab.allCases, id: \.self) { tab in
-                Label(tab.rawValue, systemImage: tab.icon)
-                    .tag(tab)
+                Button {
+                    appState.selectedTab = tab
+                } label: {
+                    Label(tab.rawValue, systemImage: tab.icon)
+                        .foregroundColor(appState.selectedTab == tab ? .blue : .primary)
+                }
             }
         }
-        .listStyle(.sidebar)
         .navigationTitle("IPlay")
     }
 }
