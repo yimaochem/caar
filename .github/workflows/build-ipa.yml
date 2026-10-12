@@ -1,10 +1,8 @@
 name: Build IPlay IPA
-
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: macos-latest
@@ -12,12 +10,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
     - name: Fix file structure
       run: |
         ln -sf IPlay/Views Views
         ln -sf IPlay/Services Services
-
     - name: Build project
       run: |
         xcodebuild \
@@ -27,27 +23,22 @@ jobs:
           -destination 'generic/platform=iOS' \
           -archivePath ./build/IPlay.xcarchive \
           archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
     - name: Fix app bundle
       run: |
         APP_PATH="./build/IPlay.xcarchive/Products/Applications/IPlay.app"
         
-        # 从系统复制一张图当图标
-        cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns "$APP_PATH/AppIcon.icns"
+        cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns "$APP_PATH/AppIcon.icns" || true
         
-        # 补Info.plist缺失字段
-        plutil -insert CFBundleExecutable -string "IPlay" "$APP_PATH/Info.plist"
-        plutil -insert UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes": false}' "$APP_PATH/Info.plist"
+        plutil -insert CFBundleExecutable -string "IPlay" "$APP_PATH/Info.plist" || true
+        plutil -insert UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes": false}' "$APP_PATH/Info.plist" || true
         
         ls -la "$APP_PATH/"
-
     - name: Export IPA
       run: |
         mkdir -p ./build/Payload
         cp -r ./build/IPlay.xcarchive/Products/Applications/IPlay.app ./build/Payload/
         cd ./build
         ditto -c -k --sequesterRsrc --keepParent Payload IPlay.ipa
-
     - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
