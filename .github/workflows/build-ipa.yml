@@ -13,6 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Fix file structure
+      run: |
+        mkdir -p IPlay/Views IPlay/Services
+        [ -d "Views" ] && mv Views/* IPlay/Views/ && rmdir Views
+        [ -d "Services" ] && mv Services/* IPlay/Services/ && rmdir Services
+        ls -la
+
     - name: Show Xcode version
       run: xcodebuild -version
 
