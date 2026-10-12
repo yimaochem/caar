@@ -2,7 +2,7 @@
 //  AudioView.swift
 //  IPlay
 //
-//  音频设置页
+//  音频设置页（兼容 iOS 15）
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ struct AudioView: View {
     
     var body: some View {
         Form {
-            Section {
+            Section(header: Text("输出音量")) {
                 HStack {
                     Image(systemName: "speaker.fill")
                     Slider(value: $appState.volume, in: 0...1)
@@ -20,11 +20,9 @@ struct AudioView: View {
                 }
                 Text("音量：\(Int(appState.volume * 100))%")
                     .foregroundColor(.secondary)
-            } header: {
-                Text("输出音量")
             }
             
-            Section {
+            Section(header: Text("音频设备")) {
                 Picker("输出设备", selection: $appState.outputDevice) {
                     Text("默认").tag("默认")
                     Text("iPad 扬声器").tag("iPad 扬声器")
@@ -35,11 +33,8 @@ struct AudioView: View {
                     Text("默认").tag("默认")
                     Text("iPad 麦克风").tag("iPad 麦克风")
                 }
-            } header: {
-                Text("音频设备")
             }
         }
-        .formStyle(.grouped)
         .navigationTitle("音频设置")
     }
 }
