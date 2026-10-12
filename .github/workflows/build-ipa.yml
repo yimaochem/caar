@@ -15,10 +15,11 @@ jobs:
 
     - name: Fix file structure
       run: |
-        # 把 IPlay 文件夹里的内容移到根目录
-        mv IPlay/* .
-        mv IPlay/.* . 2>/dev/null || true
-        rmdir IPlay
+        # 创建符号链接，让根目录和 IPlay/ 里都能找到文件
+        ln -sf IPlay/Views Views
+        ln -sf IPlay/Services Services
+        ln -sf IPlay/Info.plist Info.plist
+        ln -sf IPlay/IPlayApp.swift IPlayApp.swift
 
     - name: Show Xcode version
       run: xcodebuild -version
