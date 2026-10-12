@@ -13,14 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fix file structure (create symlinks)
+    - name: Fix file structure
       run: |
         ln -sf IPlay/Views Views
         ln -sf IPlay/Services Services
-        ls -la
-
-    - name: Show Xcode version
-      run: xcodebuild -version
 
     - name: Build project
       run: |
@@ -32,23 +28,16 @@ jobs:
           -archivePath ./build/IPlay.xcarchive \
           archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-    - name: Fix Info.plist and add icon
+    - name: Fix app bundle
       run: |
         APP_PATH="./build/IPlay.xcarchive/Products/Applications/IPlay.app"
         
-        # 用Python生成一个蓝色纯色图标
-        python3 -c "
-from PIL import Image
-img = Image.new('RGB', (1024, 1024), color=(10, 132, 255))
-img.save('$APP_PATH/AppIcon.png')
-print('图标生成成功')
-"
+        # 从系统复制一张图当图标
+        cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns "$APP_PATH/AppIcon.icns"
         
-        # 补上必须的可执行文件名字段
-        plutil -insert CFBundleExecutable -string "IPlay" "$APP_PATH/Info.plist" || echo "CFBundleExecutable已存在"
-        
-        # 加上iOS 13+必须的Scene配置
-        plutil -insert UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes": false}' "$APP_PATH/Info.plist" || echo "Scene配置已存在"
+        # 补Info.plist缺失字段
+        plutil -insert CFBundleExecutable -string "IPlay" "$APP_PATH/Info.plist"
+        plutil -insert UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes": false}' "$APP_PATH/Info.plist"
         
         ls -la "$APP_PATH/"
 
@@ -58,10 +47,8 @@ print('图标生成成功')
         cp -r ./build/IPlay.xcarchive/Products/Applications/IPlay.app ./build/Payload/
         cd ./build
         ditto -c -k --sequesterRsrc --keepParent Payload IPlay.ipa
-        rm -rf Payload
-        ls -lh IPlay.ipa
 
-    - name: Upload IPA artifact
+    - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
         name: IPlay-IPA
