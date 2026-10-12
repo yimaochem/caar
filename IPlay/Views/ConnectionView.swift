@@ -2,34 +2,41 @@
 //  ConnectionView.swift
 //  IPlay
 //
-//  连接设置页（兼容 iOS 15）
-//
 
 import SwiftUI
 
 struct ConnectionView: View {
     @EnvironmentObject var appState: AppState
-    @State private var devices: [String] = ["未发现设备"]
-    @State private var selectedDevice: String = "未发现设备"
+    @State private var devices: [String] = []
+    @State private var selectedDevice: String = ""
+    @State private var isScanning: Bool = false
     
     var body: some View {
         Form {
-            Section(header: Text("iPhone 设备")) {
-                Picker("选择设备", selection: $selectedDevice) {
-                    ForEach(devices, id: \.self) { device in
-                        Text(device).tag(device)
+            Section(header: Text("发现的设备")) {
+                if isScanning {
+                    HStack {
+                        ProgressView()
+                        Text("正在扫描...")
+                    }
+                } else if devices.isEmpty {
+                    Text("未发现设备")
+                        .foregroundColor(.secondary)
+                } else {
+                    Picker("选择设备", selection: $selectedDevice) {
+                        ForEach(devices, id: \.self) { device in
+                            Text(device).tag(device)
+                        }
                     }
                 }
                 
-                Button(action: {
-                    refreshDevices()
-                }) {
-                    Label("刷新", systemImage: "arrow.clockwise")
+                Button(action: startScan) {
+                    Label("重新扫描", systemImage: "arrow.clockwise")
                 }
             }
             
             Section(header: Text("网络模式")) {
-                Picker("网络模式", selection: $appState.networkMode) {
+                Picker("模式", selection: $appState.networkMode) {
                     ForEach(NetworkMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
@@ -37,15 +44,9 @@ struct ConnectionView: View {
                 .pickerStyle(SegmentedPickerStyle())
             }
             
-            Section(header: Text("网络配置"), footer: Text("本机热点模式：iPad 开启个人热点，iPhone 连接后进行 CarPlay 配对")) {
+            Section(header: Text("热点配置"), footer: Text("iPad开启个人热点后，iPhone连接该热点即可配对")) {
                 TextField("SSID", text: $appState.ssid)
                 SecureField("密码", text: $appState.password)
-                Picker("信道", selection: $appState.channel) {
-                    Text("自动").tag("自动")
-                    Text("1").tag("1")
-                    Text("6").tag("6")
-                    Text("11").tag("11")
-                }
             }
             
             Section(header: Text("连接状态")) {
@@ -63,31 +64,26 @@ struct ConnectionView: View {
             }
         }
         .navigationTitle("连接设置")
-        .safeAreaInset(edge: .bottom) {
-            Button(action: {
-                toggleReceiving()
-            }) {
-                HStack {
-                    Image(systemName: appState.isReceiving ? "stop.circle.fill" : "play.circle.fill")
-                    Text(appState.isReceiving ? "停止接收" : "启动接收")
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(appState.isReceiving ? Color.red : Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+        .toolbar {
+            Button(action: toggleConnection) {
+                Image(systemName: appState.isReceiving ? "stop.circle.fill" : "play.circle.fill")
+                    .font(.title)
             }
-            .padding()
-            .background(Color(.systemBackground))
+            .tint(appState.isReceiving ? .red : .blue)
+        }
+        .onAppear { startScan() }
+    }
+    
+    func startScan() {
+        isScanning = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            devices = ["iPhone 15 Pro", "iPhone 14", "iPhone 13"]
+            selectedDevice = devices.first ?? ""
+            isScanning = false
         }
     }
     
-    func refreshDevices() {
-        devices = ["iPhone 15 Pro", "iPhone 14", "未发现设备"]
-    }
-    
-    func toggleReceiving() {
+    func toggleConnection() {
         if appState.isReceiving {
             appState.isReceiving = false
             appState.connectionStatus = "已停止"
@@ -95,9 +91,9 @@ struct ConnectionView: View {
         } else {
             appState.isReceiving = true
             appState.connectionStatus = "正在连接..."
+            appState.connectedDeviceName = selectedDevice
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 appState.connectionStatus = "已连接"
-                appState.connectedDeviceName = "iPhone 15 Pro"
                 appState.isShowingCarPlay = true
             }
         }
