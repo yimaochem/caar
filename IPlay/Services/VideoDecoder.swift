@@ -2,7 +2,7 @@
 //  VideoDecoder.swift
 //  IPlay
 //
-//  H.264 视频解码
+//  H.264 视频解码（兼容 iOS 15）
 //
 
 import Foundation
@@ -21,10 +21,8 @@ class VideoDecoder: ObservableObject {
     private init() {}
     
     func setupDecoder(width: Int, height: Int) {
-        // TODO: 配置 H.264 解码会话
         print("初始化视频解码器: \(width)x\(height)")
         
-        // 创建视频格式描述
         var formatDescription: CMVideoFormatDescription?
         var status = CMVideoFormatDescriptionCreate(
             allocator: kCFAllocatorDefault,
@@ -42,9 +40,7 @@ class VideoDecoder: ObservableObject {
         
         videoFormatDescription = formatDesc
         
-        // 创建解码会话
         let callback: VTDecompressionOutputCallback = { decompressionOutputRefCon, sourceFrameRefCon, status, infoFlags, imageBuffer, presentationTimeStamp, duration in
-            // 解码完成回调
             if status == noErr, let imageBuffer = imageBuffer {
                 DispatchQueue.main.async {
                     VideoDecoder.shared.currentFrame = imageBuffer
@@ -80,15 +76,11 @@ class VideoDecoder: ObservableObject {
     }
     
     func decodeFrame(_ data: Data) {
-        guard let session = decompressionSession else { return }
-        
+        guard decompressionSession != nil else { return }
         // TODO: 解码 H.264 帧数据
-        // 1. 把 Data 包装成 CMBlockBuffer
-        // 2. 调用 VTDecompressionSessionDecodeFrame
     }
     
     func stopDecoding() {
-        decompressionSession?.invalidate()
         decompressionSession = nil
         isDecoding = false
     }
