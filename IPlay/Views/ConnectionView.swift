@@ -2,7 +2,7 @@
 //  ConnectionView.swift
 //  IPlay
 //
-//  连接设置页
+//  连接设置页（兼容 iOS 15）
 //
 
 import SwiftUI
@@ -14,40 +14,30 @@ struct ConnectionView: View {
     
     var body: some View {
         Form {
-            // MARK: - iPhone 设备
-            Section {
-                HStack {
-                    Picker("选择设备", selection: $selectedDevice) {
-                        ForEach(devices, id: \.self) { device in
-                            Text(device).tag(device)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    
-                    Button {
-                        refreshDevices()
-                    } label: {
-                        Label("刷新", systemImage: "arrow.clockwise")
+            Section(header: Text("iPhone 设备")) {
+                Picker("选择设备", selection: $selectedDevice) {
+                    ForEach(devices, id: \.self) { device in
+                        Text(device).tag(device)
                     }
                 }
-            } header: {
-                Text("iPhone 设备")
+                
+                Button {
+                    refreshDevices()
+                } label: {
+                    Label("刷新", systemImage: "arrow.clockwise")
+                }
             }
             
-            // MARK: - 网络模式
-            Section {
+            Section(header: Text("网络模式")) {
                 Picker("网络模式", selection: $appState.networkMode) {
                     ForEach(NetworkMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
-                .pickerStyle(.segmented)
-            } header: {
-                Text("网络模式")
+                .pickerStyle(SegmentedPickerStyle())
             }
             
-            // MARK: - 网络配置
-            Section {
+            Section(header: Text("网络配置")) {
                 TextField("SSID", text: $appState.ssid)
                 SecureField("密码", text: $appState.password)
                 Picker("信道", selection: $appState.channel) {
@@ -56,14 +46,11 @@ struct ConnectionView: View {
                     Text("6").tag("6")
                     Text("11").tag("11")
                 }
-            } header: {
-                Text("网络配置")
             } footer: {
                 Text("本机热点模式：iPad 开启个人热点，iPhone 连接后进行 CarPlay 配对")
             }
             
-            // MARK: - 状态
-            Section {
+            Section(header: Text("连接状态")) {
                 HStack {
                     Circle()
                         .fill(appState.isReceiving ? .green : .gray)
@@ -75,14 +62,10 @@ struct ConnectionView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-            } header: {
-                Text("连接状态")
             }
         }
-        .formStyle(.grouped)
         .navigationTitle("连接设置")
         .safeAreaInset(edge: .bottom) {
-            // 底部启动按钮
             Button {
                 toggleReceiving()
             } label: {
@@ -98,12 +81,11 @@ struct ConnectionView: View {
                 .cornerRadius(12)
             }
             .padding()
-            .background(.ultraThinMaterial)
+            .background(Color(.systemBackground))
         }
     }
     
     func refreshDevices() {
-        // TODO: 调用蓝牙管理器扫描设备
         devices = ["iPhone 15 Pro", "iPhone 14", "未发现设备"]
     }
     
@@ -115,7 +97,6 @@ struct ConnectionView: View {
         } else {
             appState.isReceiving = true
             appState.connectionStatus = "正在连接..."
-            // TODO: 启动 CarPlay 接收流程
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 appState.connectionStatus = "已连接"
                 appState.connectedDeviceName = "iPhone 15 Pro"
