@@ -13,6 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Fix file structure
+      run: |
+        # 把 IPlay 文件夹里的内容移到根目录
+        mv IPlay/* .
+        mv IPlay/.* . 2>/dev/null || true
+        rmdir IPlay
+
     - name: Show Xcode version
       run: xcodebuild -version
 
